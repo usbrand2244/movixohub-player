@@ -1,23 +1,11 @@
 // ============================================
-// VERCEL PLAYER — VidRift + Backend CSP Sandbox
+// VERCEL PLAYER — VidRift + Popup Killer
 // ============================================
 (function installVercelShield() {
 
     window.__originalUrl = window.location.href;
     window.__originalOrigin = window.location.origin;
     window.__redirectDetected = false;
-
-    const BAD_DOMAINS = [
-        'adspredictiv.com', 'hola.org', 'jump/next.php', 'campaign=',
-        'visitor_id=', 'lp/vpn', 'prads', '/jump/', 'next.php',
-        'adnetwork', 'adserver', 'doubleclick', 'popads', 'popcash',
-        'propeller', 'adcash', 'trafficjunky', 'exoclick'
-    ];
-    const isBadUrl = (url) => {
-        if (!url || typeof url !== 'string') return false;
-        const lower = url.toLowerCase();
-        return BAD_DOMAINS.some(d => lower.includes(d));
-    };
 
     // --- BASE SHIELD ---
     window.open = function() { return null; };
@@ -65,6 +53,7 @@
         } catch(e) {}
     }, 30);
 
+    // --- POPUP KILLER ---
     const popupObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
@@ -111,12 +100,13 @@
         if (!id || !/^\d+$/.test(id)) { showError('Invalid or missing ID.'); return; }
 
         let playerURL = '';
-        // VidRift uses TMDB IDs directly for all types
+        
+        // ✅ CORRECT VIDRIFT URLS
         if (type === 'movie') {
-            playerURL = `https://vidrift.net/embed/movie/${id}`;
+            playerURL = `https://embed.vidrift.net/embed/movie/${id}`;
         } else if (type === 'tv' || type === 'anime') {
             if (!/^\d+$/.test(season) || !/^\d+$/.test(episode)) { showError('Invalid season or episode.'); return; }
-            playerURL = `https://vidrift.net/embed/tv/${id}/${season}/${episode}`;
+            playerURL = `https://embed.vidrift.net/embed/tv/${id}/${season}/${episode}`;
         } else {
             showError('Unsupported media type.');
             return;
