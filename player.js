@@ -1,5 +1,5 @@
 // ============================================
-// VERCEL PLAYER — EmbedWave + Backend CSP Sandbox
+// VERCEL PLAYER — EmbedWave + Popup Killer
 // ============================================
 (function installVercelShield() {
 
@@ -7,19 +7,7 @@
     window.__originalOrigin = window.location.origin;
     window.__redirectDetected = false;
 
-    const BAD_DOMAINS = [
-        'adspredictiv.com', 'hola.org', 'jump/next.php', 'campaign=',
-        'visitor_id=', 'lp/vpn', 'prads', '/jump/', 'next.php',
-        'adnetwork', 'adserver', 'doubleclick', 'popads', 'popcash',
-        'propeller', 'adcash', 'trafficjunky', 'exoclick'
-    ];
-    const isBadUrl = (url) => {
-        if (!url || typeof url !== 'string') return false;
-        const lower = url.toLowerCase();
-        return BAD_DOMAINS.some(d => lower.includes(d));
-    };
-
-    // --- SHIELD LAYERS ---
+    // --- BASE SHIELD ---
     window.open = function() { return null; };
 
     try {
@@ -70,32 +58,51 @@
         } catch(e) {}
     }, 30);
 
+    // ═══════════════════════════════════════════════════════════════
+    // THE POPUP KILLER (TARGETS EMBEDWAVE ADS)
+    // ═══════════════════════════════════════════════════════════════
+    
+    // Block any element that tries to capture clicks outside the player
     document.addEventListener('click', function(e) {
         const el = e.target;
+        // Allow clicks inside the actual player container
         if (el.closest && el.closest('.player-container')) return;
         if (el.tagName === 'IFRAME') return;
+        
+        // Block everything else
         e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+        console.warn('[Popup Killer] Blocked out-of-bounds click');
     }, true);
 
-    // Block bad scripts
-    const badScriptObs = new MutationObserver((ms) => ms.forEach(m => m.addedNodes.forEach(n => {
-        if (n.tagName === 'SCRIPT') {
-            const src = (n.src || '').toLowerCase();
-            const text = (n.textContent || '').toLowerCase();
-            if (isBadUrl(src) || isBadUrl(text)) n.remove();
-        }
-    })));
-    badScriptObs.observe(document.head, { childList: true, subtree: true });
+    // Remove any invisible overlay divs that EmbedWave injects over the video
+    const popupObserver = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (node.nodeType === 1) {
+                    // Detect EmbedWave's invisible clickable overlays
+                    const style = window.getComputedStyle(node);
+                    if (
+                        (style.position === 'fixed' || style.position === 'absolute') && 
+                        (style.opacity === '0' || style.visibility === 'hidden' || style.zIndex > 100)
+                    ) {
+                        // If it has an onclick or onmousedown, it's an ad overlay
+                        if (node.onclick || node.onmousedown) {
+                            node.remove();
+                            console.warn('[Popup Killer] Removed invisible overlay');
+                        }
+                    }
+                }
+            });
+        });
+    });
+    popupObserver.observe(document.body, { childList: true, subtree: true });
 
-    for (let i = 0; i < 50; i++) {
-        setInterval(() => {
-            window.open = function() { return null; };
-            window.location.assign = function() {};
-            window.location.replace = function() {};
-        }, (i * 40) + 50);
-    }
+    // Disable clipboard copy/paste hijacking (common with popup ads)
+    try { if (navigator.clipboard) navigator.clipboard.writeText = () => Promise.reject(); } catch(e) {}
 
-    // --- LOAD PLAYER ---
+    // ═══════════════════════════════════════════════════════════════
+    // LOAD PLAYER
+    // ═══════════════════════════════════════════════════════════════
     const params = new URLSearchParams(window.location.search);
     const type = (params.get('type') || 'movie').toLowerCase();
     const id = params.get('id');
@@ -126,7 +133,6 @@
             return;
         }
 
-        // Force iframe to take up full size
         iframe.style.width = '100%';
         iframe.style.height = '100%';
         iframe.style.position = 'absolute';
