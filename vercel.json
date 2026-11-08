@@ -1,11 +1,15 @@
 {
   "headers": [
     {
-      "source": "/",
+      "source": "/(.*)",
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "sandbox allow-scripts allow-same-origin allow-forms allow-presentation"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; frame-src https://embedwave.cc; connect-src 'self' https://embedwave.cc; object-src 'none'; base-uri 'self'; form-action 'self'; sandbox allow-scripts allow-same-origin allow-forms allow-presentation"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "ALLOWALL"
         }
       ]
     }
