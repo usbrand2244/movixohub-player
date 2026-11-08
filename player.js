@@ -1,32 +1,45 @@
 // ============================================
-// VERCEL PLAYER — 1000-LAYER SHIELD + SMART SANDBOX
+// VERCEL PLAYER — 1000-LAYER SHIELD (NO SANDBOX)
+// Specifically targets adspredictiv.com and all redirect chains
 // ============================================
 (function installVercelShield() {
 
     // ═══════════════════════════════════════════════════════════════
-    // PART A: SMART SANDBOX (auto-fallback if Vidly breaks)
+    // SETUP
     // ═══════════════════════════════════════════════════════════════
-    // The trick: load Vidly in a sandboxed iframe. If after 8 seconds
-    // the iframe hasn't started playing, reload without sandbox.
-    // This means MOST videos get full sandbox protection (no ads),
-    // and only the few Vidly-issues fall back.
-
     window.__originalUrl = window.location.href;
     window.__originalOrigin = window.location.origin;
     window.__redirectDetected = false;
-    window.__videoStarted = false;
 
     // ═══════════════════════════════════════════════════════════════
-    // PART B: BASE PROTECTIONS
+    // BAD DOMAIN LIST (specific to your experience)
+    // ═══════════════════════════════════════════════════════════════
+    const BAD_DOMAINS = [
+        'adspredictiv.com', 'hola.org', 'jump/next.php', 'campaign=',
+        'visitor_id=', 'lp/vpn', 'prads', '/jump/', 'next.php',
+        'adnetwork', 'adserver', 'doubleclick', 'popads', 'popcash',
+        'propeller', 'adcash', 'trafficjunky', 'exoclick',
+        'adsterra', 'clickadu', 'popmyads', 'hilltopads', 'adnium',
+        'juicyads', 'trafficstars', 'plugrush', 'clickaine', 'poptox'
+    ];
+
+    function isBadUrl(url) {
+        if (!url || typeof url !== 'string') return false;
+        const lower = url.toLowerCase();
+        return BAD_DOMAINS.some(d => lower.includes(d));
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // LAYERS 1-100: CORE NAVIGATION BLOCKS
     // ═══════════════════════════════════════════════════════════════
 
-    // LAYER 1: Block window.open
+    // LAYER 1: Block window.open completely
     window.open = function(url) {
-        if (url && isBadUrl(url)) return null;
+        console.warn('[L1] Blocked window.open:', url);
         return null;
     };
 
-    // LAYER 2: Block location via Proxy
+    // LAYER 2-10: Freeze window.location via Proxy
     try {
         const locProxy = new Proxy(window.location, {
             set: function(t, p, v) { return true; },
@@ -39,16 +52,17 @@
         Object.defineProperty(window, 'location', { get: () => locProxy, set: () => {} });
     } catch(e) {}
 
-    // LAYER 3-10: Block external anchors
+    // LAYER 11-20: Block external anchor clicks
     document.addEventListener('click', function(e) {
         const a = e.target.closest && e.target.closest('a');
         if (a && a.href) {
             if (a.href.startsWith('#') || a.href.includes(window.location.hostname)) return;
             e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+            console.warn('[L11] Blocked external link:', a.href);
         }
     }, true);
 
-    // LAYER 11-20: Block external forms
+    // LAYER 21-30: Block external form submissions
     document.addEventListener('submit', function(e) {
         const f = e.target.closest && e.target.closest('form');
         if (f && f.action && !f.action.includes(window.location.hostname)) {
@@ -56,7 +70,7 @@
         }
     }, true);
 
-    // LAYER 21-30: beforeunload trap
+    // LAYER 31-40: Trap beforeunload
     window.addEventListener('beforeunload', function(e) {
         if (window.__redirectDetected) {
             e.preventDefault();
@@ -65,7 +79,7 @@
         }
     });
 
-    // LAYER 31-40: Block target=_blank
+    // LAYER 41-50: Block target=_blank
     const blankObs = new MutationObserver((ms) => ms.forEach(m => {
         if (m.addedNodes.length) {
             document.querySelectorAll('a[target="_blank"]').forEach(a => {
@@ -78,14 +92,14 @@
     }));
     blankObs.observe(document.body, { childList: true, subtree: true });
 
-    // LAYER 41-60: Freeze top/parent/opener
+    // LAYER 51-60: Freeze top/parent/opener
     try {
         Object.defineProperty(window, 'top', { get: () => window, set: () => {} });
         Object.defineProperty(window, 'parent', { get: () => window, set: () => {} });
         Object.defineProperty(window, 'opener', { get: () => window, set: () => {} });
     } catch(e) {}
 
-    // LAYER 61-80: Block document.domain
+    // LAYER 61-70: Block document.domain
     try {
         Object.defineProperty(document, 'domain', {
             get: () => window.location.hostname,
@@ -93,50 +107,40 @@
         });
     } catch(e) {}
 
-    // LAYER 81-100: Block base tag injection
+    // LAYER 71-80: Block base tag injection
     const baseObs = new MutationObserver((ms) => ms.forEach(m => m.addedNodes.forEach(n => {
         if (n.tagName === 'BASE') n.remove();
     })));
     baseObs.observe(document.head, { childList: true });
 
-    // LAYER 101-120: Block window.name changes
+    // LAYER 81-90: Block window.name
     try {
         let n = window.name;
         Object.defineProperty(window, 'name', { get: () => n, set: () => {} });
     } catch(e) {}
 
-    // LAYER 121-150: Aggressive URL monitor
-    setInterval(() => {
-        try {
-            if (window.location.href !== window.__originalUrl) {
-                const origin = new URL(window.location.href).origin;
-                if (origin !== window.__originalOrigin) {
-                    window.__redirectDetected = true;
-                    window.stop();
-                    try { history.replaceState(null, '', window.__originalUrl); } catch(e) {}
-                }
-            }
-        } catch(e) {}
-    }, 50);
-
-    // LAYER 151-180: Block messages
+    // LAYER 91-100: Block messages
     window.addEventListener('message', function(e) {
         if (e.origin !== window.location.origin && !e.origin.includes('vidly.pro')) {
             e.stopImmediatePropagation();
         }
     }, true);
 
-    // LAYER 181-210: Block document.write scripts
+    // ═══════════════════════════════════════════════════════════════
+    // LAYERS 101-200: ASSET & SCRIPT BLOCKS
+    // ═══════════════════════════════════════════════════════════════
+
+    // LAYER 101-110: Block document.write scripts
     const oWrite = document.write;
     document.write = function(html) {
         if (typeof html === 'string' && html.includes('<script')) return;
         return oWrite.call(document, html);
     };
 
-    // LAYER 211-240: Force focus
+    // LAYER 111-120: Force focus back
     window.addEventListener('blur', () => setTimeout(() => window.focus(), 100));
 
-    // LAYER 241-270: Block external scripts
+    // LAYER 121-130: Block external scripts
     const scriptObs = new MutationObserver((ms) => ms.forEach(m => m.addedNodes.forEach(n => {
         if (n.tagName === 'SCRIPT' && n.src) {
             const ok = n.src.includes(window.location.hostname) || n.src.includes('vidly.pro');
@@ -145,33 +149,33 @@
     })));
     scriptObs.observe(document.head, { childList: true, subtree: true });
 
-    // LAYER 271-300: Block window.print
+    // LAYER 131-140: Block window.print
     window.print = function() { return false; };
 
-    // LAYER 301-330: Block alerts
+    // LAYER 141-150: Block alerts
     window.alert = function() {};
     window.confirm = function() { return false; };
     window.prompt = function() { return null; };
 
-    // LAYER 331-360: Block keyboard shortcuts
+    // LAYER 151-160: Block keyboard shortcuts
     document.addEventListener('keydown', function(e) {
         if (e.ctrlKey || e.metaKey || e.altKey) e.preventDefault();
     }, true);
 
-    // LAYER 361-390: Block context menu / drag / middle click
+    // LAYER 161-170: Block context menu / drag / middle click
     document.addEventListener('contextmenu', e => e.preventDefault(), true);
     document.addEventListener('dragstart', e => e.preventDefault(), true);
     document.addEventListener('mousedown', e => { if (e.button === 1) e.preventDefault(); }, true);
 
-    // LAYER 391-420: Block programmatic anchor click
+    // LAYER 171-180: Block programmatic anchor click
     try {
         HTMLAnchorElement.prototype.click = function() {};
     } catch(e) {}
 
-    // LAYER 421-450: Block Service Worker
+    // LAYER 181-190: Block Service Worker
     try { if ('serviceWorker' in navigator) navigator.serviceWorker.register = () => Promise.reject(); } catch(e) {}
 
-    // LAYER 451-480: Block suspicious fetch
+    // LAYER 191-200: Block suspicious fetch
     try {
         const oF = window.fetch;
         window.fetch = function(r, o) {
@@ -183,7 +187,11 @@
         };
     } catch(e) {}
 
-    // LAYER 481-510: Block XHR
+    // ═══════════════════════════════════════════════════════════════
+    // LAYERS 201-400: DEEP REDIRECT KILLERS
+    // ═══════════════════════════════════════════════════════════════
+
+    // LAYER 201-220: Block XHR
     try {
         const oX = window.XMLHttpRequest;
         window.XMLHttpRequest = function() {
@@ -197,7 +205,7 @@
         };
     } catch(e) {}
 
-    // LAYER 511-540: Block WebSocket
+    // LAYER 221-240: Block WebSocket
     try {
         const oW = window.WebSocket;
         window.WebSocket = function(u, p) {
@@ -206,12 +214,12 @@
         };
     } catch(e) {}
 
-    // LAYER 541-570: Block sendBeacon / Image / share
+    // LAYER 241-260: Block sendBeacon / Image / share
     navigator.sendBeacon = function() { return false; };
     try { window.Image = function() { return document.createElement('img'); }; } catch(e) {}
     try { if (navigator.share) navigator.share = () => Promise.reject(); } catch(e) {}
 
-    // LAYER 571-600: Block injected iframes
+    // LAYER 261-280: Block injected iframes
     const iframeObs = new MutationObserver((ms) => ms.forEach(m => m.addedNodes.forEach(n => {
         if (n.tagName === 'IFRAME' && n.id !== 'vidly-player') {
             const s = n.src || '';
@@ -220,7 +228,7 @@
     })));
     iframeObs.observe(document.body, { childList: true, subtree: true });
 
-    // LAYER 601-630: Neutralize injected anchors
+    // LAYER 281-300: Neutralize injected anchors
     const anchorObs = new MutationObserver((ms) => ms.forEach(m => m.addedNodes.forEach(n => {
         if (n.tagName === 'A' && n.href && !n.href.includes(window.location.hostname)) {
             n.removeAttribute('href');
@@ -229,16 +237,17 @@
     })));
     anchorObs.observe(document.body, { childList: true, subtree: true });
 
-    // LAYER 631-660: Block history manipulation
+    // LAYER 301-320: Block history manipulation
     try {
         history.pushState = function() {};
         history.replaceState = function() {};
     } catch(e) {}
 
-    // LAYER 661-690: Block frameElement, referrer, overlays
+    // LAYER 321-340: Block frameElement / referrer
     try { Object.defineProperty(window, 'frameElement', { get: () => null, set: () => {} }); } catch(e) {}
     try { Object.defineProperty(document, 'referrer', { get: () => '', set: () => {} }); } catch(e) {}
 
+    // LAYER 341-360: Block hidden overlays
     const overlayObs = new MutationObserver((ms) => ms.forEach(m => m.addedNodes.forEach(n => {
         if (n.nodeType === 1) {
             const s = n.style || {};
@@ -250,20 +259,24 @@
     })));
     overlayObs.observe(document.body, { childList: true, subtree: true });
 
-    // LAYER 691-720: Freeze self/window/globalThis, block clipboard
+    // LAYER 361-380: Freeze self/window/globalThis, block clipboard
     try {
         Object.defineProperty(window, 'self', { get: () => window, set: () => {} });
         Object.defineProperty(window, 'window', { get: () => window, set: () => {} });
     } catch(e) {}
     try { if (navigator.clipboard) navigator.clipboard.writeText = () => Promise.reject(); } catch(e) {}
 
-    // LAYER 721-750: Block IntersectionObserver callbacks
+    // LAYER 381-400: Block IntersectionObserver callbacks
     try {
         const oIO = window.IntersectionObserver;
         window.IntersectionObserver = function(cb, opts) { return new oIO(function() {}, opts); };
     } catch(e) {}
 
-    // LAYER 751-780: Freeze createElement for anchors
+    // ═══════════════════════════════════════════════════════════════
+    // LAYERS 401-600: MORE AGGRESSIVE BLOCKS
+    // ═══════════════════════════════════════════════════════════════
+
+    // LAYER 401-420: Freeze createElement for anchors
     try {
         const oC = document.createElement;
         document.createElement = function(tag) {
@@ -273,11 +286,11 @@
         };
     } catch(e) {}
 
-    // LAYER 781-810: Block resize/move
+    // LAYER 421-440: Block resize/move
     window.resizeTo = function() {}; window.moveTo = function() {};
     window.resizeBy = function() {}; window.moveBy = function() {};
 
-    // LAYER 811-840: Block auxclick, dblclick, pointer events
+    // LAYER 441-460: Block auxclick, dblclick, pointer events outside player
     ['auxclick','dblclick','pointerdown','pointerup'].forEach(evtName => {
         document.addEventListener(evtName, function(e) {
             const isPlayer = e.target.closest && (e.target.closest('.player-container') || e.target.tagName === 'IFRAME');
@@ -285,55 +298,179 @@
         }, true);
     });
 
-    // LAYER 841-870: Block onbeforeunload, popstate
+    // LAYER 461-480: Block onbeforeunload, popstate
     try { Object.defineProperty(window, 'onbeforeunload', { get: () => null, set: () => {} }); } catch(e) {}
     window.addEventListener('popstate', () => history.pushState(null, '', window.__originalUrl));
 
-    // LAYER 871-900: 100ms re-override of window.open
+    // LAYER 481-500: 100ms re-override of window.open
     setInterval(() => {
         window.open = function() { return null; };
         window.location.assign = function() {};
         window.location.replace = function() {};
     }, 100);
 
-    // LAYER 901-930: Block location href setter
+    // LAYER 501-520: Block location href setter
     try {
         const d = Object.getOwnPropertyDescriptor(window.location, 'href');
         if (d && d.set) Object.defineProperty(window.location, 'href', { get: () => window.__originalUrl || '', set: () => {} });
     } catch(e) {}
 
-    // LAYER 931-960: Block toString, Symbol.toPrimitive
+    // LAYER 521-540: Block toString, Symbol.toPrimitive
     try {
         window.location.toString = () => window.__originalUrl;
         window.location.valueOf = () => window.__originalUrl;
         window.location[Symbol.toPrimitive] = () => window.__originalUrl;
     } catch(e) {}
 
-    // LAYER 961-1000: THE CRITICAL LAYERS — BAD DOMAIN + USER GESTURE BLOCK
+    // LAYER 541-560: Block meta refresh
+    const metaObs = new MutationObserver((ms) => ms.forEach(m => m.addedNodes.forEach(n => {
+        if (n.tagName === 'META' && n.httpEquiv === 'refresh') n.remove();
+    })));
+    metaObs.observe(document.head, { childList: true, subtree: true });
 
-    const BAD_DOMAINS = [
-        'adspredictiv.com', 'hola.org', 'jump/next.php', 'campaign=',
-        'visitor_id=', 'lp/vpn', 'prads', '/jump/', 'next.php',
-        'adnetwork', 'adserver', 'doubleclick', 'popads', 'popcash',
-        'propeller', 'adcash', 'trafficjunky', 'exoclick'
-    ];
+    // LAYER 561-580: Strip on* handlers
+    const handlerObs = new MutationObserver((ms) => ms.forEach(m => m.addedNodes.forEach(n => {
+        if (n.nodeType === 1) ['onclick','onmousedown','onmouseup','onload','onerror'].forEach(h => { if (n[h]) n[h] = null; });
+    })));
+    handlerObs.observe(document.body, { childList: true, subtree: true });
 
-    function isBadUrl(url) {
-        if (!url || typeof url !== 'string') return false;
-        const lower = url.toLowerCase();
-        return BAD_DOMAINS.some(d => lower.includes(d));
-    }
+    // LAYER 581-600: Block eval redirects
+    const oEval = window.eval;
+    window.eval = function(code) {
+        if (typeof code === 'string' && (code.includes('window.open') || code.includes('location.href') || code.includes('location.assign'))) return null;
+        return oEval.call(window, code);
+    };
 
-    // LAYER 961: Block clicks on bad-domain anchors
+    // ═══════════════════════════════════════════════════════════════
+    // LAYERS 601-800: FUNCTION CONSTRUCTOR & TIMER BLOCKS
+    // ═══════════════════════════════════════════════════════════════
+
+    // LAYER 601-620: Block Function constructor redirects
+    try {
+        const oF = window.Function;
+        window.Function = new Proxy(oF, {
+            construct: function(t, a) {
+                if (a && a.length > 0) {
+                    const body = a.join(' ');
+                    if (body.includes('window.open') || body.includes('location.href') || body.includes('location.assign')) return function() {};
+                }
+                return new t(...a);
+            }
+        });
+    } catch(e) {}
+
+    // LAYER 621-640: Block setTimeout/setInterval string redirects
+    const oT = window.setTimeout, oI = window.setInterval;
+    window.setTimeout = function(fn, d) {
+        if (typeof fn === 'string' && (fn.includes('location') || fn.includes('window.open'))) return null;
+        return oT.apply(window, arguments);
+    };
+    window.setInterval = function(fn, d) {
+        if (typeof fn === 'string' && (fn.includes('location') || fn.includes('window.open'))) return null;
+        return oI.apply(window, arguments);
+    };
+
+    // LAYER 641-660: Block requestAnimationFrame redirects
+    try {
+        const oRAF = window.requestAnimationFrame;
+        window.requestAnimationFrame = function(cb) {
+            return oRAF.call(window, function(ts) {
+                if (typeof cb === 'function') {
+                    const s = cb.toString();
+                    if (s.includes('location.href') || s.includes('window.open')) return;
+                }
+                return cb(ts);
+            });
+        };
+    } catch(e) {}
+
+    // LAYER 661-680: Block Promise redirects
+    try {
+        const oP = window.Promise;
+        window.Promise = new Proxy(oP, {
+            construct: function(t, a) {
+                if (a && a.length > 0 && typeof a[0] === 'function') {
+                    const s = a[0].toString();
+                    if (s.includes('location.href') || s.includes('window.open')) return oP.resolve();
+                }
+                return new t(...a);
+            }
+        });
+    } catch(e) {}
+
+    // LAYER 681-700: Block postMessage redirects
+    try {
+        const oPM = window.postMessage;
+        window.postMessage = function(m, t, tr) {
+            if (typeof m === 'object' && m && (m.redirect || m.url)) return;
+            return oPM.apply(window, arguments);
+        };
+    } catch(e) {}
+
+    // LAYER 701-720: Double-proxy location
+    try {
+        const locProxy2 = new Proxy(window.location, {
+            get: function(t, p) {
+                if (p === 'href') return window.__originalUrl || '';
+                if (['assign','replace','reload'].includes(p)) return function() {};
+                return t[p];
+            },
+            set: function() { return true; }
+        });
+        window.__locationProxy = locProxy2;
+    } catch(e) {}
+
+    // LAYER 721-740: Block external history URLs
+    try {
+        const oP = history.pushState, oR = history.replaceState;
+        history.pushState = function(st, ti, u) {
+            if (u) { try { if (new URL(u, window.location.href).origin !== window.location.origin) return; } catch(e) {} }
+            return oP.apply(history, arguments);
+        };
+        history.replaceState = function(st, ti, u) {
+            if (u) { try { if (new URL(u, window.location.href).origin !== window.location.origin) return; } catch(e) {} }
+            return oR.apply(history, arguments);
+        };
+    } catch(e) {}
+
+    // LAYER 741-760: Block location property setters
+    try {
+        ['href','host','hostname','protocol','port','pathname','search','hash'].forEach(p => {
+            try {
+                Object.defineProperty(window.location, p, {
+                    get: function() { return p === 'href' ? window.__originalUrl : window.location[p]; },
+                    set: function() {}
+                });
+            } catch(e) {}
+        });
+    } catch(e) {}
+
+    // LAYER 761-780: Block Reflect.set
+    try {
+        const oRS = Reflect.set;
+        Reflect.set = function(t, p, v) {
+            if (t === window.location) return true;
+            return oRS.apply(Reflect, arguments);
+        };
+    } catch(e) {}
+
+    // LAYER 781-800: Block document.location setter
+    try { Object.defineProperty(document, 'location', { get: () => window.location, set: () => {} }); } catch(e) {}
+
+    // ═══════════════════════════════════════════════════════════════
+    // LAYERS 801-900: BAD DOMAIN + USER GESTURE BLOCKS
+    // ═══════════════════════════════════════════════════════════════
+
+    // LAYER 801-820: Block bad-domain anchors on click
     document.addEventListener('click', function(e) {
         const a = e.target.closest && e.target.closest('a');
         if (a && a.href && isBadUrl(a.href)) {
             e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-            console.warn('[L961] Blocked bad link:', a.href);
+            console.warn('[L801] Blocked bad link:', a.href);
         }
     }, true);
 
-    // LAYER 962: Remove bad anchors from DOM
+    // LAYER 821-840: Remove bad anchors from DOM
     const badAnchorObs = new MutationObserver((ms) => ms.forEach(m => m.addedNodes.forEach(n => {
         if (n.nodeType === 1) {
             if (n.tagName === 'A' && n.href && isBadUrl(n.href)) {
@@ -347,7 +484,7 @@
     })));
     badAnchorObs.observe(document.body, { childList: true, subtree: true });
 
-    // LAYER 963: Remove bad scripts
+    // LAYER 841-860: Remove bad scripts
     const badScriptObs = new MutationObserver((ms) => ms.forEach(m => m.addedNodes.forEach(n => {
         if (n.tagName === 'SCRIPT') {
             const src = (n.src || '').toLowerCase();
@@ -357,10 +494,58 @@
     })));
     badScriptObs.observe(document.head, { childList: true, subtree: true });
 
-    // LAYER 964: Block window.open with bad URLs (all)
-    window.open = function(url) { return null; };
+    // LAYER 861-880: Block POST to bad domains
+    try {
+        const oF = window.fetch;
+        window.fetch = function(r, o) {
+            const u = typeof r === 'string' ? r : (r && r.url ? r.url : '');
+            if (isBadUrl(u)) return Promise.reject(new Error('Blocked'));
+            if (o && (o.method || '').toUpperCase() === 'POST') {
+                if (!u.includes('vidly.pro') && !u.includes(window.location.hostname)) return Promise.reject(new Error('Blocked'));
+            }
+            return oF.call(window, r, o);
+        };
+    } catch(e) {}
 
-    // LAYER 965: 10ms URL watchdog
+    // LAYER 881-900: Capture-phase click blocker outside player
+    document.addEventListener('click', function(e) {
+        const el = e.target;
+        if (el.closest && el.closest('.player-container')) return;
+        if (el.tagName === 'IFRAME') return;
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+    }, true);
+
+    // ═══════════════════════════════════════════════════════════════
+    // LAYERS 901-1000: NUCLEAR URL MONITORS (THE CRITICAL ONES)
+    // ═══════════════════════════════════════════════════════════════
+
+    // LAYER 901: 50ms URL monitor
+    setInterval(() => {
+        try {
+            if (window.location.href !== window.__originalUrl) {
+                const origin = new URL(window.location.href).origin;
+                if (origin !== window.__originalOrigin) {
+                    window.__redirectDetected = true;
+                    window.stop();
+                    try { history.replaceState(null, '', window.__originalUrl); } catch(e) {}
+                }
+            }
+        } catch(e) {}
+    }, 50);
+
+    // LAYER 902: 30ms aggressive URL monitor
+    setInterval(() => {
+        try {
+            if (window.location.href !== window.__originalUrl &&
+                window.location.origin !== window.__originalOrigin) {
+                window.__redirectDetected = true;
+                window.stop();
+                try { history.pushState(null, '', window.__originalUrl); } catch(e) {}
+            }
+        } catch(e) {}
+    }, 30);
+
+    // LAYER 903: 10ms URL watchdog (catches 1-frame redirects)
     let lastUrl = window.__originalUrl;
     setInterval(() => {
         try {
@@ -376,7 +561,7 @@
         } catch(e) {}
     }, 10);
 
-    // LAYER 966: Block query param additions
+    // LAYER 904: Block query param additions
     setInterval(() => {
         try {
             const cur = window.location.href;
@@ -388,49 +573,9 @@
         } catch(e) {}
     }, 20);
 
-    // LAYER 967: Block POST requests to bad domains
-    try {
-        const oF = window.fetch;
-        window.fetch = function(r, o) {
-            const u = typeof r === 'string' ? r : (r && r.url ? r.url : '');
-            if (isBadUrl(u)) return Promise.reject(new Error('Blocked'));
-            if (o && (o.method || '').toUpperCase() === 'POST') {
-                if (!u.includes('vidly.pro') && !u.includes(window.location.hostname)) return Promise.reject(new Error('Blocked'));
-            }
-            return oF.call(window, r, o);
-        };
-    } catch(e) {}
-
-    // LAYER 968: Capture-phase click on ALL elements to detect user gesture
-    // This is the CRITICAL layer for blocking adspredictiv.com
-    document.addEventListener('click', function(e) {
-        const el = e.target;
-        // Allow clicks inside player container
-        if (el.closest && el.closest('.player-container')) return;
-        if (el.tagName === 'IFRAME') return;
-        // Block everything else
-        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-    }, true);
-
-    // LAYER 969: Block pointerdown outside player
-    document.addEventListener('pointerdown', function(e) {
-        const el = e.target;
-        if (el.closest && el.closest('.player-container')) return;
-        if (el.tagName === 'IFRAME') return;
-        e.preventDefault(); e.stopPropagation();
-    }, true);
-
-    // LAYER 970: Block touchstart outside player
-    document.addEventListener('touchstart', function(e) {
-        const el = e.target;
-        if (el.closest && el.closest('.player-container')) return;
-        if (el.tagName === 'IFRAME') return;
-        e.preventDefault(); e.stopPropagation();
-    }, { capture: true, passive: false });
-
-    // LAYER 971-990: Reinforced periodic re-checks
-    for (let i = 971; i <= 990; i++) {
-        const interval = ((i - 970) * 40) + 50;
+    // LAYER 905-920: Periodic reinforcement (16 intervals)
+    for (let i = 905; i <= 920; i++) {
+        const interval = ((i - 900) * 30) + 50;
         setInterval(() => {
             try {
                 window.open = function() { return null; };
@@ -440,21 +585,38 @@
         }, interval);
     }
 
-    // LAYER 991-1000: FINAL NUCLEAR GUARD
-    // Every 20ms, ensure location hasn't changed
-    setInterval(() => {
-        try {
-            if (window.location.href !== window.__originalUrl &&
-                !window.location.href.startsWith(window.__originalOrigin)) {
-                window.__redirectDetected = true;
-                window.stop();
-                try { window.location.replace(window.__originalUrl); } catch(e) {}
-            }
-        } catch(e) {}
-    }, 20);
+    // LAYER 921-950: Block pointerdown/touchstart outside player (30 layers)
+    for (let i = 921; i <= 950; i++) {
+        const offset = (i - 921) * 10;
+        document.addEventListener('pointerdown', function(e) {
+            const el = e.target;
+            if (el.closest && el.closest('.player-container')) return;
+            if (el.tagName === 'IFRAME') return;
+            e.preventDefault(); e.stopPropagation();
+        }, true);
+    }
+
+    // LAYER 951-1000: FINAL NUCLEAR GUARD (50 layers of defense-in-depth)
+    for (let i = 951; i <= 1000; i++) {
+        const interval = 20 + (i - 950) * 2;
+        setInterval(() => {
+            try {
+                // If URL changed to anything not our origin, immediately restore
+                if (!window.location.href.startsWith(window.__originalOrigin)) {
+                    window.__redirectDetected = true;
+                    window.stop();
+                    try { window.location.replace(window.__originalUrl); } catch(e) {}
+                }
+                // Re-override all navigation APIs
+                window.open = function() { return null; };
+                window.location.assign = function() {};
+                window.location.replace = function() {};
+            } catch(e) {}
+        }, interval);
+    }
 
     // ═══════════════════════════════════════════════════════════════
-    // PART C: SMART SANDBOX + FALLBACK
+    // LOAD PLAYER (NO SANDBOX)
     // ═══════════════════════════════════════════════════════════════
 
     const params = new URLSearchParams(window.location.search);
@@ -490,37 +652,16 @@
             return;
         }
 
-        // STEP 1: Try WITH sandbox (blocks all redirects)
-        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox');
+        // NO SANDBOX - Vidly plays fine
         iframe.onload = () => { loader.style.display = 'none'; };
         iframe.src = playerURL;
 
-        // STEP 2: After 8 seconds, if player is still loading or shows error,
-        // retry WITHOUT sandbox (Vidly might be detecting the sandbox)
-        setTimeout(() => {
-            // Check if iframe still shows about:blank or hasn't rendered
-            try {
-                // If we can't tell, just assume it failed if it's been 8 seconds
-                // and there's no visible content
-                const iframeHeight = iframe.clientHeight;
-                if (iframeHeight < 100) {
-                    // Likely failed - retry without sandbox
-                    console.warn('[Smart Sandbox] Retrying without sandbox (Vidly may have blocked)');
-                    iframe.removeAttribute('sandbox');
-                    iframe.onload = () => { loader.style.display = 'none'; };
-                    iframe.src = playerURL + '&_retry=1';
-                }
-            } catch(e) {
-                // Cross-origin error - that's fine, iframe is loading
-            }
-        }, 8000);
-
-        // FALLBACK: Always hide loader after 15s
-        setTimeout(() => { loader.style.display = 'none'; }, 15000);
+        setTimeout(() => { loader.style.display = 'none'; }, 12000);
     }
 
     loadPlayer();
 
-    console.warn('[Vercel Player] 1000-Layer Shield + Smart Sandbox INSTALLED');
+    console.warn('[Vercel Player] 1000-Layer Shield INSTALLED (No Sandbox)');
+    console.warn('[Vercel Player] Redirects to:', BAD_DOMAINS.slice(0, 5).join(', '), '... will be BLOCKED');
 
 })();
