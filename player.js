@@ -1,5 +1,5 @@
 // ============================================
-// VERCEL PLAYER — VidRift + Popup Killer
+// VERCEL PLAYER — EmbedWave + JS Shield
 // ============================================
 (function installVercelShield() {
 
@@ -7,7 +7,7 @@
     window.__originalOrigin = window.location.origin;
     window.__redirectDetected = false;
 
-    // --- BASE SHIELD ---
+    // --- BASE JS SHIELD ---
     window.open = function() { return null; };
 
     try {
@@ -79,7 +79,7 @@
         e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
     }, true);
 
-    // --- LOAD VIDRIFT PLAYER ---
+    // --- LOAD EMBEDWAVE ---
     const params = new URLSearchParams(window.location.search);
     const type = (params.get('type') || 'movie').toLowerCase();
     const id = params.get('id');
@@ -100,13 +100,10 @@
         if (!id || !/^\d+$/.test(id)) { showError('Invalid or missing ID.'); return; }
 
         let playerURL = '';
-        
-        // ✅ CORRECT VIDRIFT URLS
         if (type === 'movie') {
-            playerURL = `https://embed.vidrift.net/embed/movie/${id}`;
+            playerURL = `https://embedwave.cc/embed/movie/${id}`;
         } else if (type === 'tv' || type === 'anime') {
-            if (!/^\d+$/.test(season) || !/^\d+$/.test(episode)) { showError('Invalid season or episode.'); return; }
-            playerURL = `https://embed.vidrift.net/embed/tv/${id}/${season}/${episode}`;
+            playerURL = `https://embedwave.cc/embed/tv/${id}/${season}/${episode}`;
         } else {
             showError('Unsupported media type.');
             return;
