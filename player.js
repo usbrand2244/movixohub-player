@@ -1,11 +1,23 @@
 // ============================================
-// VERCEL PLAYER — EmbedWave + Popup Killer
+// VERCEL PLAYER — VidRift + Backend CSP Sandbox
 // ============================================
 (function installVercelShield() {
 
     window.__originalUrl = window.location.href;
     window.__originalOrigin = window.location.origin;
     window.__redirectDetected = false;
+
+    const BAD_DOMAINS = [
+        'adspredictiv.com', 'hola.org', 'jump/next.php', 'campaign=',
+        'visitor_id=', 'lp/vpn', 'prads', '/jump/', 'next.php',
+        'adnetwork', 'adserver', 'doubleclick', 'popads', 'popcash',
+        'propeller', 'adcash', 'trafficjunky', 'exoclick'
+    ];
+    const isBadUrl = (url) => {
+        if (!url || typeof url !== 'string') return false;
+        const lower = url.toLowerCase();
+        return BAD_DOMAINS.some(d => lower.includes(d));
+    };
 
     // --- BASE SHIELD ---
     window.open = function() { return null; };
@@ -40,11 +52,6 @@
         Object.defineProperty(window, 'opener', { get: () => window, set: () => {} });
     } catch(e) {}
 
-    try {
-        history.pushState = function() {};
-        history.replaceState = function() {};
-    } catch(e) {}
-
     setInterval(() => {
         try {
             if (window.location.href !== window.__originalUrl) {
@@ -58,38 +65,17 @@
         } catch(e) {}
     }, 30);
 
-    // ═══════════════════════════════════════════════════════════════
-    // THE POPUP KILLER (TARGETS EMBEDWAVE ADS)
-    // ═══════════════════════════════════════════════════════════════
-    
-    // Block any element that tries to capture clicks outside the player
-    document.addEventListener('click', function(e) {
-        const el = e.target;
-        // Allow clicks inside the actual player container
-        if (el.closest && el.closest('.player-container')) return;
-        if (el.tagName === 'IFRAME') return;
-        
-        // Block everything else
-        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-        console.warn('[Popup Killer] Blocked out-of-bounds click');
-    }, true);
-
-    // Remove any invisible overlay divs that EmbedWave injects over the video
     const popupObserver = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
                 if (node.nodeType === 1) {
-                    // Detect EmbedWave's invisible clickable overlays
                     const style = window.getComputedStyle(node);
                     if (
-                        (style.position === 'fixed' || style.position === 'absolute') && 
-                        (style.opacity === '0' || style.visibility === 'hidden' || style.zIndex > 100)
+                        (style.position === 'fixed' || style.position === 'absolute') &&
+                        (style.opacity === '0' || style.visibility === 'hidden') &&
+                        (node.onclick || node.onmousedown)
                     ) {
-                        // If it has an onclick or onmousedown, it's an ad overlay
-                        if (node.onclick || node.onmousedown) {
-                            node.remove();
-                            console.warn('[Popup Killer] Removed invisible overlay');
-                        }
+                        node.remove();
                     }
                 }
             });
@@ -97,12 +83,14 @@
     });
     popupObserver.observe(document.body, { childList: true, subtree: true });
 
-    // Disable clipboard copy/paste hijacking (common with popup ads)
-    try { if (navigator.clipboard) navigator.clipboard.writeText = () => Promise.reject(); } catch(e) {}
+    document.addEventListener('click', function(e) {
+        const el = e.target;
+        if (el.closest && el.closest('.player-container')) return;
+        if (el.tagName === 'IFRAME') return;
+        e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+    }, true);
 
-    // ═══════════════════════════════════════════════════════════════
-    // LOAD PLAYER
-    // ═══════════════════════════════════════════════════════════════
+    // --- LOAD VIDRIFT PLAYER ---
     const params = new URLSearchParams(window.location.search);
     const type = (params.get('type') || 'movie').toLowerCase();
     const id = params.get('id');
@@ -123,11 +111,12 @@
         if (!id || !/^\d+$/.test(id)) { showError('Invalid or missing ID.'); return; }
 
         let playerURL = '';
+        // VidRift uses TMDB IDs directly for all types
         if (type === 'movie') {
-            playerURL = `https://embedwave.cc/embed/movie/${id}`;
+            playerURL = `https://vidrift.net/embed/movie/${id}`;
         } else if (type === 'tv' || type === 'anime') {
             if (!/^\d+$/.test(season) || !/^\d+$/.test(episode)) { showError('Invalid season or episode.'); return; }
-            playerURL = `https://embedwave.cc/embed/tv/${id}/${season}/${episode}`;
+            playerURL = `https://vidrift.net/embed/tv/${id}/${season}/${episode}`;
         } else {
             showError('Unsupported media type.');
             return;
