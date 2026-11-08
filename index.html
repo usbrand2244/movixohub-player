@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>MoviXoHub Player</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="player-container">
+
+        <div id="loader" class="loader">
+            Loading player...
+        </div>
+
+        <div id="error" class="error"></div>
+
+        <iframe
+            id="vidly-player"
+            src="about:blank"
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin">
+        </iframe>
+
+    </div>
+
+    <script src="player.js"></script>
+</body>
+</html>
