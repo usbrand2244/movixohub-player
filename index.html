@@ -10,10 +10,10 @@
     <div class="player-container">
         <div id="loader" class="loader">Loading player...</div>
         <div id="error" class="error"></div>
+        <!-- NOTE: NO sandbox attribute here — sandbox is enforced via vercel.json CSP header -->
         <iframe
             id="player-frame"
             src="about:blank"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
             allowfullscreen
             referrerpolicy="strict-origin-when-cross-origin">
