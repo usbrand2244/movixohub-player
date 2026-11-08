@@ -1,0 +1,13 @@
+{
+  "headers": [
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "sandbox allow-scripts allow-same-origin allow-forms allow-presentation"
+        }
+      ]
+    }
+  ]
+}
