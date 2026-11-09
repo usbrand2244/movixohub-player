@@ -6,10 +6,15 @@
     <title>MoviXoHub Player</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-        iframe { 
+        html, body { 
             width: 100%; 
             height: 100%; 
+            overflow: hidden; 
+            background: #000; 
+        }
+        iframe { 
+            width: 100vw; 
+            height: 100vh; 
             border: none; 
             display: block; 
             position: absolute; 
@@ -33,93 +38,16 @@
 <body>
     <div id="loader" class="loader">Loading player...</div>
     
-    <!-- Strict Sandbox directly on the iframe -->
+    <!-- Clean iframe, no sandbox attribute to break Nxsha -->
     <iframe
         id="video-frame"
         src="about:blank"
-        sandbox="allow-scripts allow-same-origin allow-presentation"
         allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
         allowfullscreen>
     </iframe>
 
     <script>
-        // ═══════════════════════════════════════════════════════════════
-        // THE 500-LAYER AGGRESSIVE SHIELD
-        // ═══════════════════════════════════════════════════════════════
-        (function installMegaGuard() {
-            // 1. Block window.open
-            const realOpen = window.open;
-            window.open = function() {
-                console.warn('[Guard] Blocked window.open()');
-                return null;
-            };
-
-            // 2. Freeze window.location
-            try {
-                const locProxy = new Proxy(window.location, {
-                    set: function(t, p, v) { return true; },
-                    get: function(t, p) {
-                        if (['assign','replace','reload'].includes(p)) return function() {};
-                        if (p === 'href') return t.href;
-                        return t[p];
-                    }
-                });
-                Object.defineProperty(window, 'location', { get: () => locProxy, set: () => {} });
-            } catch(e) {}
-
-            // 3. Trap beforeunload
-            window.addEventListener('beforeunload', function(e) {
-                e.preventDefault();
-                e.returnValue = 'Blocked';
-                return 'Blocked';
-            });
-
-            // 4. Block external link clicks
-            document.addEventListener('click', function(e) {
-                const a = e.target.closest && e.target.closest('a');
-                if (a && a.href) {
-                    if (a.href.startsWith('#') || a.href.includes(window.location.hostname)) return;
-                    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-                    console.warn('[Guard] Blocked external link:', a.href);
-                }
-            }, true);
-
-            // 5. Remove invisible popup overlays injected by ads
-            const popupObserver = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    mutation.addedNodes.forEach((node) => {
-                        if (node.nodeType === 1) {
-                            const style = window.getComputedStyle(node);
-                            if (
-                                (style.position === 'fixed' || style.position === 'absolute') &&
-                                (style.opacity === '0' || style.visibility === 'hidden') &&
-                                (node.onclick || node.onmousedown)
-                            ) {
-                                node.remove();
-                                console.warn('[Guard] Removed invisible click overlay');
-                            }
-                        }
-                    });
-                });
-            });
-            popupObserver.observe(document.body, { childList: true, subtree: true });
-
-            // 6. The "500-Layer" interval lock (re-applies the shield every 50ms)
-            for (let i = 0; i < 500; i++) {
-                setInterval(() => {
-                    window.open = function() { return null; };
-                    if (window.location) {
-                        window.location.assign = function() {};
-                        window.location.replace = function() {};
-                    }
-                }, 50 + (i * 2)); // Spread them out slightly to cover all timing windows
-            }
-        })();
-
-        // ═══════════════════════════════════════════════════════════════
-        // LOAD NXSHA
-        // ═══════════════════════════════════════════════════════════════
-        (function loadPlayer() {
+        (function() {
             const params = new URLSearchParams(window.location.search);
             const type = (params.get('type') || 'movie').toLowerCase();
             const id = params.get('id');
@@ -139,6 +67,7 @@
             if (type === 'anime' || type === 'tv') {
                 targetUrl = `https://web.nxsha.app/embed/tv/${id}/${season}/${episode}`;
             } else {
+                // Using the Nitro server for movies
                 targetUrl = `https://web.nxsha.app/embed/movie/${id}?server=Nitro%20-%20%5BMulti-Lang%5D`;
             }
 
