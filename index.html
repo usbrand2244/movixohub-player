@@ -8,18 +8,12 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
         iframe { width: 100%; height: 100%; border: none; display: block; position: absolute; top: 0; left: 0; background: #000; }
-        .loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: white; background: #000; z-index: 10; }
+        .loader { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: white; background: #000; z-index: 10; font-family: sans-serif; }
     </style>
 </head>
 <body>
     <div id="loader" class="loader">Loading player...</div>
-    <iframe
-        id="video-frame"
-        src="about:blank"
-        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-        allowfullscreen>
-    </iframe>
-
+    <iframe id="video-frame" src="about:blank" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
     <script>
         (function() {
             const params = new URLSearchParams(window.location.search);
@@ -32,7 +26,7 @@
             const loader = document.getElementById('loader');
 
             if (!id) {
-                loader.textContent = 'Error: No ID provided';
+                loader.textContent = 'Error: No ID provided.';
                 return;
             }
 
@@ -45,10 +39,12 @@
                 targetUrl = `https://vidbolt.pro/movie/${id}`;
             }
 
-            // Point to your Python proxy
+            // ✅ Pointing to the API route correctly
             const proxyUrl = `https://movixohub-player.vercel.app/api/index.py?url=${encodeURIComponent(targetUrl)}`;
 
-            iframe.onload = () => { loader.style.display = 'none'; };
+            iframe.onload = () => {
+                if (loader) loader.style.display = 'none';
+            };
             iframe.src = proxyUrl;
         })();
     </script>
