@@ -1,17 +1,15 @@
 {
-  "headers": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'; frame-src https://vidbolt.pro; object-src 'none'; sandbox allow-scripts allow-same-origin allow-forms allow-presentation"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "ALLOWALL"
-        }
-      ]
+      "src": "api/index.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/index.py"
     }
   ]
 }
