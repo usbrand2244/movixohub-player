@@ -3,15 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoviXoHub Player</title>
+    <title>Middleman Sandbox</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-        iframe { width: 100%; height: 100%; border: none; display: block; }
+        iframe { 
+            width: 100vw; 
+            height: 100vh; 
+            border: none; 
+            display: block; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+        }
     </style>
 </head>
 <body>
-    <iframe id="vidly-frame" src="about:blank" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-    <script src="player.js"></script>
+    <script>
+        const params = window.location.search;
+        const playerUrl = 'https://movixohub-player.vercel.app/' + params;
+        
+        const iframe = document.createElement('iframe');
+        iframe.src = playerUrl;
+        // Force the iframe to fill the screen
+        iframe.style.width = '100vw';
+        iframe.style.height = '100vh';
+        iframe.style.border = 'none';
+        
+        iframe.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
+        iframe.allowFullscreen = true;
+        document.body.appendChild(iframe);
+    </script>
 </body>
 </html>
