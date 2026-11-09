@@ -5,21 +5,25 @@
     const season = params.get('season') || '1';
     const episode = params.get('episode') || '1';
 
-    const iframe = document.getElementById('vidly-frame');
+    const iframe = document.getElementById('video-frame');
     const loader = document.getElementById('loader');
+    const errorBox = document.getElementById('error');
 
     if (!id) {
-        if (loader) loader.textContent = 'Invalid or missing ID.';
+        if (loader) loader.style.display = 'none';
+        if (errorBox) { errorBox.style.display = 'flex'; errorBox.textContent = 'Invalid or missing ID.'; }
         return;
     }
 
     let url = '';
-    if (type === 'anime') {
-        url = `https://vidly.pro/anime/${id}/${episode}/sub`;
-    } else if (type === 'tv') {
-        url = `https://vidly.pro/tv/${id}/${season}/${episode}`;
+    
+    // CinemaOS URL Structure
+    if (type === 'tv' || type === 'anime') {
+        // CinemaOS uses /player/{id}/{season}/{episode}
+        url = `https://cinemaos.tech/player/${id}/${season}/${episode}?theme=ffffff`;
     } else {
-        url = `https://vidly.pro/movie/${id}`;
+        // Movies use /player/{id}
+        url = `https://cinemaos.tech/player/${id}?theme=ffffff`;
     }
 
     iframe.onload = () => {
