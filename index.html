@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MoviXoHub Player (Lockdown)</title>
+    <title>MoviXoHub Player</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
@@ -21,11 +21,11 @@
 <body>
     <div id="loader" class="loader">Loading player...</div>
 
-    <!-- Critical: Completely remove allow-same-origin -->
+    <!-- Keep allow-same-origin to ensure playback, but do not grant pop-up or top-level navigation permissions -->
     <iframe
         id="video-frame"
         src="about:blank"
-        sandbox="allow-scripts allow-forms allow-presentation"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
         allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
         allowfullscreen>
     </iframe>
