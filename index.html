@@ -6,42 +6,26 @@
     <title>MoviXoHub Player</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { 
-            width: 100%; 
-            height: 100%; 
-            overflow: hidden; 
-            background: #000; 
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+        iframe {
+            width: 100vw; height: 100vh; border: none; display: block;
+            position: absolute; top: 0; left: 0; background: #000;
         }
-        iframe { 
-            width: 100vw; 
-            height: 100vh; 
-            border: none; 
-            display: block; 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-            background: #000; 
-        }
-        .loader { 
-            position: absolute; 
-            inset: 0; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            color: white; 
-            background: #000; 
-            z-index: 10; 
-            font-family: sans-serif;
+        .loader {
+            position: absolute; inset: 0; display: flex; align-items: center;
+            justify-content: center; color: white; background: #000;
+            z-index: 10; font-family: sans-serif;
         }
     </style>
 </head>
 <body>
     <div id="loader" class="loader">Loading player...</div>
-    
-    <!-- Clean iframe, no sandbox attribute to break Nxsha -->
+
+    <!-- Key point: sandbox intentionally omits allow-popups and allow-top-navigation -->
     <iframe
         id="video-frame"
         src="about:blank"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
         allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
         allowfullscreen>
     </iframe>
@@ -63,18 +47,16 @@
             }
 
             let targetUrl = '';
-            
             if (type === 'anime' || type === 'tv') {
                 targetUrl = `https://web.nxsha.app/embed/tv/${id}/${season}/${episode}`;
             } else {
-                // Using the Nitro server for movies
                 targetUrl = `https://web.nxsha.app/embed/movie/${id}?server=Nitro%20-%20%5BMulti-Lang%5D`;
             }
 
             iframe.onload = () => {
                 if (loader) loader.style.display = 'none';
             };
-            
+
             iframe.src = targetUrl;
         })();
     </script>
