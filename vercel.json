@@ -1,9 +1,12 @@
 {
-  "version": 2,
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; frame-src https://web.nxsha.app; object-src 'none'; sandbox allow-scripts allow-same-origin allow-forms allow-presentation"
+        },
         {
           "key": "X-Frame-Options",
           "value": "ALLOWALL"
