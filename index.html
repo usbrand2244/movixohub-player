@@ -4,22 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoviXoHub Player</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-        iframe { 
-            width: 100vw; 
-            height: 100vh; 
-            border: none; 
-            display: block; 
-            position: absolute; 
-            top: 0; 
-            left: 0; 
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <iframe id="vidly-frame" src="about:blank" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+    <div class="player-container">
+        <div id="loader" class="loader">Loading player...</div>
+        <div id="error" class="error"></div>
+        <iframe
+            id="vidly-frame"
+            src="about:blank"
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin">
+        </iframe>
+    </div>
     <script src="player.js"></script>
 </body>
 </html>
