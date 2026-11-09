@@ -4,6 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoviXoHub Player</title>
+
+    <!-- 🛑 ULTRA STRICT CSP: Blocks all popups and ad networks -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://web.nxsha.app;
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data: blob: https://web.nxsha.app;
+        connect-src 'self' https://web.nxsha.app;
+        frame-src https://web.nxsha.app;
+        object-src 'none';
+        base-uri 'none';
+        form-action 'none';
+        sandbox allow-scripts allow-same-origin allow-presentation;
+    ">
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { 
@@ -12,6 +27,7 @@
             overflow: hidden; 
             background: #000; 
         }
+        /* Forces the iframe to be full screen */
         iframe { 
             width: 100vw; 
             height: 100vh; 
@@ -38,10 +54,11 @@
 <body>
     <div id="loader" class="loader">Loading player...</div>
     
-    <!-- Clean iframe, no sandbox attribute to break Nxsha -->
+    <!-- 🛑 SANDBOX ON IFRAME: Blocks redirects -->
     <iframe
         id="video-frame"
         src="about:blank"
+        sandbox="allow-scripts allow-same-origin allow-presentation"
         allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
         allowfullscreen>
     </iframe>
@@ -67,9 +84,16 @@
             if (type === 'anime' || type === 'tv') {
                 targetUrl = `https://web.nxsha.app/embed/tv/${id}/${season}/${episode}`;
             } else {
-                // Using the Nitro server for movies
+                // Using the Nitro server
                 targetUrl = `https://web.nxsha.app/embed/movie/${id}?server=Nitro%20-%20%5BMulti-Lang%5D`;
             }
+
+            // Zero redirects via JS
+            window.open = function() { return null; };
+            try {
+                window.location.assign = function() {};
+                window.location.replace = function() {};
+            } catch(e) {}
 
             iframe.onload = () => {
                 if (loader) loader.style.display = 'none';
