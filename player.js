@@ -17,13 +17,14 @@
 
     let url = '';
     
-    // CinemaOS URL Structure
-    if (type === 'tv' || type === 'anime') {
-        // CinemaOS uses /player/{id}/{season}/{episode}
-        url = `https://cinemaos.tech/player/${id}/${season}/${episode}?theme=ffffff`;
+    // Assuming VidBolt uses standard paths
+    if (type === 'anime') {
+        // Anime uses AniList ID (assuming /anime/{id}/{episode}/sub)
+        url = `https://vidbolt.pro/anime/${id}/${episode}/sub`;
+    } else if (type === 'tv') {
+        url = `https://vidbolt.pro/tv/${id}/${season}/${episode}`;
     } else {
-        // Movies use /player/{id}
-        url = `https://cinemaos.tech/player/${id}?theme=ffffff`;
+        url = `https://vidbolt.pro/movie/${id}`;
     }
 
     iframe.onload = () => {
