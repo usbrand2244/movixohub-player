@@ -58,13 +58,11 @@
 
             let targetUrl = '';
             
-            if (type === 'anime') {
-                // Nxsha handles Anime via TMDB TV structure
-                targetUrl = `https://web.nxsha.app/embed/tv/${id}/${season}/${episode}`;
-            } else if (type === 'tv') {
+            if (type === 'anime' || type === 'tv') {
+                // Nxsha uses TMDB ID and Season/Episode for both
                 targetUrl = `https://web.nxsha.app/embed/tv/${id}/${season}/${episode}`;
             } else {
-                // Movies get the specific Nitro Server from your screenshot
+                // Movies with the Nitro server added
                 targetUrl = `https://web.nxsha.app/embed/movie/${id}?server=Nitro%20-%20%5BMulti-Lang%5D`;
             }
 
