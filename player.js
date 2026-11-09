@@ -9,11 +9,13 @@
     let url = '';
 
     if (type === 'anime') {
-        // Use AniList ID for anime
+        // Vidly uses AniList IDs for anime
         url = `https://vidly.pro/anime/${id}/${episode}/sub`;
     } else if (type === 'tv') {
+        // Vidly uses TMDB IDs for TV
         url = `https://vidly.pro/tv/${id}/${season}/${episode}`;
     } else {
+        // Vidly uses TMDB IDs for movies
         url = `https://vidly.pro/movie/${id}`;
     }
 
