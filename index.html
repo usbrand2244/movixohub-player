@@ -4,21 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoviXoHub Player</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+        iframe { width: 100%; height: 100%; border: none; display: block; }
+    </style>
 </head>
 <body>
-    <div class="player-container">
-        <div id="loader" class="loader">Loading player...</div>
-        <div id="error" class="error"></div>
-        <!-- No sandbox attribute here, the vercel.json header handles it -->
-        <iframe
-            id="player-frame"
-            src="about:blank"
-            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-            allowfullscreen
-            referrerpolicy="strict-origin-when-cross-origin">
-        </iframe>
-    </div>
+    <iframe id="vidly-frame" src="about:blank" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
     <script src="player.js"></script>
 </body>
 </html>
