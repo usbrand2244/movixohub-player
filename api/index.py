@@ -51,10 +51,11 @@ def _rewrite_html(html: str, base_url: str, proxy_root: str) -> str:
     html = re.sub(r"(href\s*=\s*')([^']*)(')", lambda m: m.group(1) + to_proxy(m.group(2)) + m.group(3), html, flags=re.I)
     return html
 
-@app.get("/")
+# ⚠️ UPDATED ROUTE HERE
+@app.get("/api/index.py")
 async def proxy(request: Request, url: str = ""):
     if not url:
-        return {"status": "ok", "message": "Proxy is running. Use /?url=<target>"}
+        return {"status": "ok", "message": "Proxy is running. Use /api/index.py?url=<target>"}
 
     target = _safe_url(url)
     fwd = {k: v for k, v in request.headers.items() if k.lower() not in ("host", "connection", "accept-encoding")}
@@ -78,7 +79,6 @@ async def proxy(request: Request, url: str = ""):
         if lk not in STRIP_HEADERS and lk not in HOP_BY_HOP:
             out.headers[k] = v
 
-    # Force headers to allow embedding
     out.headers["X-Frame-Options"] = "ALLOWALL"
     out.headers["Content-Security-Policy"] = "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; frame-ancestors *;"
     out.headers["Access-Control-Allow-Origin"] = "*"
