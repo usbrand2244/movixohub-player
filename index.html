@@ -7,10 +7,41 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
-        iframe { width: 100%; height: 100%; border: none; display: block; position: absolute; top: 0; left: 0; background: #000; }
+        iframe { 
+            width: 100%; 
+            height: 100%; 
+            border: none; 
+            display: block; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            background: #000; 
+        }
+        .loader { 
+            position: absolute; 
+            inset: 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            background: #000; 
+            z-index: 10; 
+            font-family: sans-serif;
+        }
     </style>
 </head>
 <body>
+    <div id="loader" class="loader">Loading player...</div>
+    
+    <!-- The sandbox attribute is applied directly here to block top navigation -->
+    <iframe
+        id="video-frame"
+        src="about:blank"
+        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+        allowfullscreen>
+    </iframe>
+
     <script>
         (function() {
             const params = new URLSearchParams(window.location.search);
@@ -19,8 +50,11 @@
             const season = params.get('season') || '1';
             const episode = params.get('episode') || '1';
 
+            const iframe = document.getElementById('video-frame');
+            const loader = document.getElementById('loader');
+
             if (!id) {
-                document.body.innerHTML = '<h1 style="color:white; text-align:center; margin-top:20%">Error: No ID</h1>';
+                loader.textContent = 'Error: No ID provided.';
                 return;
             }
 
@@ -32,11 +66,19 @@
                 targetUrl = `https://web.nxsha.app/embed/movie/${id}?server=Nitro%20-%20%5BMulti-Lang%5D`;
             }
 
-            const iframe = document.createElement('iframe');
+            // Kill popups and top-navigation attempts
+            window.open = function() { return null; };
+            
+            try {
+                window.location.assign = function() {};
+                window.location.replace = function() {};
+            } catch(e) {}
+
+            iframe.onload = () => {
+                if (loader) loader.style.display = 'none';
+            };
+            
             iframe.src = targetUrl;
-            iframe.allow = "autoplay; fullscreen; encrypted-media; picture-in-picture";
-            iframe.allowFullscreen = true;
-            document.body.appendChild(iframe);
         })();
     </script>
 </body>
